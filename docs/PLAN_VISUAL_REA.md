@@ -82,3 +82,4 @@ La guía oficial usa `npx rea-agents setup`, configura clientes y workflow y req
 
 ## Validación
 Capturas iguales en viewport, recurso, instante y cámara. Probar 1672x941, 1920x1080, 1366x768 y ventana compacta. Recorrido: seleccionar -> seguir -> reproducir -> pausar -> inspeccionar evento -> abrir alerta -> volver. Medir rendimiento con hardware, navegador, cantidad de recursos, resolución y efectos declarados. El build no demuestra fluidez. No declarar fidelidad total sin comparación.
+

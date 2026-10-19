@@ -15,39 +15,22 @@ import {
 import { CUADRILLAS } from "../../data/scenario";
 import { faseAt, tramoAt, minToHHMM } from "../../data/derive";
 import VehicleMarker, { type Beam } from "./VehicleMarker";
+import { roadLegs, routeState, sampleLeg, splitLeg } from "../../data/routeGeometry";
 
 type Px = { w: number; h: number };
 type Seg = { d: string; kind: "ejecutado" | "retorno"; state: "exec" | "plan"; mid?: { x: number; y: number; ang: number } };
 
-function hash(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
-
-/** geometría de la ruta en píxeles, curvada y partida por el cursor */
 function segmentos(tr: ResourceTrack, now: number, sz: Px): Seg[] {
-  const out: Seg[] = [];
-  const P = (wp: string) => ({ x: WAYPOINTS[wp].x * sz.w, y: WAYPOINTS[wp].y * sz.h });
-  for (let i = 1; i < tr.ruta.length; i++) {
-    const a = P(tr.ruta[i - 1].wp), b = P(tr.ruta[i].wp);
-    const t0 = tr.ruta[i - 1].t, t1 = tr.ruta[i].t;
-    const ret = tr.ruta[i].kind === "retorno";
-    // control de curva (perpendicular, determinista por segmento)
-    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
-    const amp = ((hash(tr.id + i) % 100) / 100 - 0.5) * 0.22 * len;
-    const cx = mx + (-dy / len) * amp, cy = my + (dx / len) * amp;
-    const ang = (Math.atan2(dx, -dy) * 180) / Math.PI;
-    const full = `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
-    if (ret) { out.push({ d: full, kind: "retorno", state: now >= t1 ? "exec" : "plan", mid: { x: cx, y: cy, ang } }); continue; }
-    if (now >= t1) out.push({ d: full, kind: "ejecutado", state: "exec", mid: { x: cx, y: cy, ang } });
-    else if (now <= t0) out.push({ d: full, kind: "ejecutado", state: "plan" });
-    else {
-      const f = (now - t0) / Math.max(1, t1 - t0);
-      const px = a.x + (b.x - a.x) * f, py = a.y + (b.y - a.y) * f;
-      const c1x = a.x + (cx - a.x) * f, c1y = a.y + (cy - a.y) * f;
-      out.push({ d: `M ${a.x} ${a.y} Q ${c1x} ${c1y} ${px} ${py}`, kind: "ejecutado", state: "exec", mid: { x: (a.x + px) / 2, y: (a.y + py) / 2, ang } });
-      out.push({ d: `M ${px} ${py} Q ${cx} ${cy} ${b.x} ${b.y}`, kind: "ejecutado", state: "plan" });
-    }
-  }
-  return out;
+  const state = routeState(tr, now, WAYPOINTS);
+  const path = (pts: {x:number;y:number}[]) => pts.map((p,i)=>`${i?'L':'M'} ${p.x*sz.w} ${p.y*sz.h}`).join(' ');
+  return roadLegs(tr, WAYPOINTS).flatMap((leg,i) => {
+    const split=splitLeg(leg,state.fractions[i]);const mid=sampleLeg(leg,Math.max(0.01,state.fractions[i]/2));
+    const kind=leg.kind==='retorno'?'retorno' as const:'ejecutado' as const;
+    const out: Seg[]=[];
+    if(split.executed.length>1)out.push({d:path(split.executed),kind,state:'exec',mid:{x:mid.point.x*sz.w,y:mid.point.y*sz.h,ang:Math.atan2(mid.tangent.x*sz.w,-mid.tangent.y*sz.h)*180/Math.PI}});
+    if(split.planned.length>1)out.push({d:path(split.planned),kind,state:'plan'});
+    return out;
+  });
 }
 
 export default function TrackingMap() {
@@ -99,7 +82,7 @@ export default function TrackingMap() {
       <div className="tmap__top">
         <div className="tmap__toggles">
           {[["trayectorias", "Trayectorias"], ["detenciones", "Detenciones"], ["geocercas", "Geocercas"]].map(([id, l]) => (
-            <button key={id} className={capas[id] ? "on" : ""} onClick={() => setCapaWorld(id)}>{l}</button>
+            <button key={id} aria-pressed={Boolean(capas[id])} className={capas[id] ? "on" : ""} onClick={() => setCapaWorld(id)}>{l}</button>
           ))}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -107,7 +90,7 @@ export default function TrackingMap() {
             <button onClick={() => setSegRender("3d")}>3D</button>
             <button className="on" disabled>2D</button>
           </div>
-          <button className="tmap__seguir" onClick={onSeguir}>Seguir <span className={`switch ${seguir ? "on" : ""}`} /></button>
+          <button className="tmap__seguir" aria-pressed={seguir} onClick={onSeguir}>Seguir <span className={`switch ${seguir ? "on" : ""}`} /></button>
         </div>
       </div>
 
@@ -136,7 +119,7 @@ export default function TrackingMap() {
             return segmentos(tr, now, sz).map((s, i) => {
               const key = tr.id + i;
               if (s.kind === "retorno") {
-                return <path key={key} d={s.d} fill="none" stroke="var(--blue)" strokeWidth="2.5" strokeDasharray="7 6" opacity={sel ? 0.85 : 0.3} strokeLinecap="round" />;
+                return <path key={key} d={s.d} fill="none" stroke="var(--blue)" strokeWidth="2.5" strokeDasharray={s.state === "plan" ? "7 6" : undefined} opacity={sel ? 0.85 : 0.3} strokeLinecap="round" />;
               }
               if (s.state === "plan") {
                 return <path key={key} d={s.d} fill="none" stroke="var(--violet)" strokeWidth="2.5" strokeDasharray="7 7" opacity={sel ? 0.55 : 0.2} strokeLinecap="round" />;
@@ -174,10 +157,11 @@ export default function TrackingMap() {
         {/* overlay: waypoints (pads) */}
         {Object.values(WAYPOINTS).map((w) => {
           const p = px(w.x, w.y);
+          const occupied = mostrar.some(tr => { const pos=posicionEn(tr,now);return Math.hypot((pos.x-w.x)*sz.w,(pos.y-w.y)*sz.h)<42; });
           return (
-            <div key={w.id} style={{ position: "absolute", left: p.x, top: p.y, transform: "translate(-50%,-50%)", pointerEvents: "none", zIndex: 2 }}>
+            <div key={w.id} data-waypoint={w.id} style={{ position: "absolute", left: p.x, top: p.y, transform: "translate(-50%,-50%)", pointerEvents: "none", zIndex: 2 }}>
               <div style={{ width: 9, height: 9, background: "#141926", border: "1.5px solid var(--border)", borderRadius: 2 }} />
-              <div style={{ position: "absolute", left: 12, top: 16, fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-3)", whiteSpace: "nowrap", letterSpacing: "0.03em" }}>{w.label}</div>
+              <div style={{ position: "absolute", left: 12, top: 16, display: occupied ? "none" : undefined, fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-3)", whiteSpace: "nowrap", letterSpacing: "0.03em" }}>{w.label}</div>
             </div>
           );
         })}
@@ -189,7 +173,8 @@ export default function TrackingMap() {
           const mov = movilidad(tr, now);
           const sel = tr.id === cuadrillaSel;
           const beam: Beam = p.desactualizada ? "none" : mov === "traslado" ? "azul" : mov === "disponible" ? "none" : "ambar";
-          const heading = rumboEn(tr, now);
+          const tangent = routeState(tr, now, WAYPOINTS).tangent;
+          const heading = Math.atan2(tangent.x * sz.w, -tangent.y * sz.h) * 180 / Math.PI;
           const fase = faseAt(c, now); const tramo = tramoAt(c, now);
           const enEspera = fase === "espera" && tramo;
           return (

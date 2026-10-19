@@ -1,52 +1,49 @@
-# KODIX ATLAS · Interfaz web (centro de operaciones)
+# KODIX ATLAS · Centro de operaciones
 
-Interfaz del centro de operaciones Oil & Gas. Stack: **Vite + React + TypeScript**,
-animación con **framer-motion** (Motion), estado/tiempo con **zustand**, gráficos en
-**SVG propio**. Sin dependencias de red, vídeo ni fuentes externas.
+Frontend React 18 + TypeScript + Vite. Motion para interfaz, Zustand para tiempo y selección, Three.js/R3F/Drei para la escena ilustrativa de Seguimiento. Gráficos operativos SVG propios. Adaptador WorldBridge demo, preparado para integración futura con el mundo Unreal.
 
-## Arranque
+## Iniciar en Mac
 
 ```bash
-cd web-interface
-npm install
+npm ci
 npm run dev
 ```
 
-- App: `http://localhost:5173/`
-- Labs (componentes aislados): `http://localhost:5173/labs/`
+Abrir la URL indicada por Vite. Para actualizar esta copia Git, detener Vite y ejecutar:
 
-Build de producción: `npm run build` · Previsualizar: `npm run preview`
-
-## Estructura
-
-```
-src/
-  data/        scenario.ts (escenario demo determinista) · derive.ts (todo derivado)
-  state/       useOps.ts (store único: tiempo + selección) · ReplayClock.tsx
-  world/       WorldBridge.ts (contrato con Unreal/Cesium + adaptador demo)
-  styles/      tokens.css (sistema de diseño) · global/shell/charts/screens.css
-  components/  shell/ (nav, rail, replay, paneles, chips, tooltip) · charts/ · icons
-  screens/     PulsoOperativo · Campo · Stub (Seguimiento/Territorio/Alertas)
-labs/          galería de componentes
+```bash
+git pull --ff-only
+npm ci
+npm run dev
 ```
 
-## Qué está implementado (etapa 1)
+## Comprobaciones
 
-- **Shell completo**: navegación superior, rail, barra de replay (play/pausa/1x·2x·4x/scrub),
-  paneles, chips de estado, tooltips. Tiempo global único; mover el cursor actualiza todo.
-- **Pulso operativo (alta fidelidad)**: KPIs derivados, FOCO operativo, Radar de respuesta
-  (ETA), Capacidad/Demanda con brecha, Flujo de misiones (% real por fase), Línea de tiempo
-  por cuadrilla con hitos. Seleccionar una cuadrilla la resalta en todos los componentes.
-- **Campo**: superficie reservada al mundo (adaptador demo rotulado) + capas y encuadre
-  cableados al `WorldBridge`.
-- **Contrato de integración** con el mundo geográfico, espejando `CONTRATO_MUNDO.md v0.1`.
-- **Labs** con los 4 componentes de Pulso e inspector de datos.
+```bash
+npm test
+npm run build
+```
 
-## Pendiente (próximas etapas)
+Pruebas visuales opcionales:
 
-Centro de alertas (relaciones evidencia/hipótesis, cronología, reconocer/asignar),
-Seguimiento, Inteligencia territorial; labs `.html` individuales por componente;
-transporte real a Unreal (hoy adaptador demo).
+```bash
+npx playwright install chromium
+npm run test:ui
+```
 
-El spec `KODIX_ATLAS_Especificacion_v0.1.md` no está en el repo: se trabajó desde
-los 5 mockups + el brief. Ver `DECISIONES.md`.
+`test:ui` sirve el build de producción en un puerto libre, prueba selección, cámara, replay con teclado, búsqueda, navegación y cuatro tamaños de pantalla. Para un navegador local alternativo se puede definir `CHROMIUM_EXECUTABLE_PATH`. No se interpreta el rendimiento de un navegador software como rendimiento de una GPU real.
+
+## Estado
+
+- Pulso, Alertas y Seguimiento comparten datos, selección y replay.
+- Seguimiento incluye vistas 2D y 3D con la misma geometría y horarios de llegada/salida; diferencia retorno y planificado. Camioneta, camión y maquinaria son modelos originales ligeros y representativos.
+- Cámara 3D con vista general, encuadre, seguimiento y control manual; arrastrar cancela seguimiento.
+- Las detenciones y huecos se conservan en el tiempo; finalizar un hueco no inventa una observación GPS.
+- Campo mantiene adaptador demo; Territorio sigue pendiente. No hay servidor ni conexión GPS en vivo.
+- El terreno, los caminos y las instalaciones de Seguimiento son ilustrativos: no tienen validación geográfica ni fidelidad fotogramétrica.
+- La carpeta labs no se recibió; su entrada de build es opcional cuando existe.
+
+## Investigación y próximas mejoras
+
+Ver `docs/PLAN_VISUAL_REA.md` y `docs/INVESTIGACION_SEGUIMIENTO_01.md`.
+La investigación REA es herramienta de desarrollo y no forma parte del bundle. Las dependencias de análisis están fuera del proyecto.

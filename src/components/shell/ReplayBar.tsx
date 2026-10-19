@@ -68,6 +68,11 @@ export default function ReplayBar() {
           aria-valuemax={WINDOW_MIN}
           aria-valuenow={Math.round(now)}
           aria-label="Línea de tiempo"
+          aria-valuetext={minToHHMM(now)}
+          onKeyDown={(e) => {
+            const values: Record<string, number> = { ArrowLeft: now - 1, ArrowRight: now + 1, PageDown: now - 10, PageUp: now + 10, Home: 0, End: WINDOW_MIN };
+            if (e.key in values) { e.preventDefault(); pause(); setNow(values[e.key]); }
+          }}
           tabIndex={0}
         >
           <div className="scrub__rail" />

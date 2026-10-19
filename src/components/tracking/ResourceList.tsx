@@ -1,3 +1,4 @@
+import VehiclePortrait from "./VehiclePortrait";
 /* Listado de recursos · búsqueda, filtros y conteos derivados del mismo
    escenario. La selección usa la identidad global (cuadrillaSel). */
 import { useOps } from "../../state/useOps";
@@ -56,7 +57,7 @@ export default function ResourceList() {
     <Panel title="Recursos" right={<span className="demo-badge">{visibles.length}</span>} className="rlist">
       <div className="rlist__search">
         <IconSearch width={16} height={16} />
-        <input placeholder="Buscar recurso…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input aria-label="Buscar recurso" placeholder="Buscar recurso…" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
       <div className="rlist__filtros">
         {FILTROS.map((f) => (
@@ -69,8 +70,8 @@ export default function ResourceList() {
         {visibles.map(({ t, c, mov }) => {
           const sel = cuadrillaSel === c.id;
           return (
-            <motion.button key={c.id} layout className={`rcard ${sel ? "rcard--sel" : ""}`} onClick={() => abrir(c.id, c.frenteId)}>
-              <span className="rcard__veh"><IconTruck width={22} height={22} /></span>
+            <motion.button key={c.id} layout aria-pressed={sel} className={`rcard ${sel ? "rcard--sel" : ""}`} onClick={() => abrir(c.id, c.frenteId)}>
+              <span className="rcard__veh"><VehiclePortrait type={t.veh} /></span>
               <span>
                 <span className="rcard__id">{c.id} · {c.tarea}{t.sinMision ? " (vacío)" : ""}</span>
                 <span className="rcard__sub"><IconPin width={12} height={12} /> {ubicacionTexto(c.id, now)}</span>

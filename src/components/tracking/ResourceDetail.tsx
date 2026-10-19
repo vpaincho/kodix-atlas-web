@@ -1,3 +1,4 @@
+import VehiclePortrait from "./VehiclePortrait";
 /* Detalle del recurso · pestañas Trayecto / Eventos / Estado. Respeta las reglas
    de datos: detención GPS ≠ espera, última posición + antigüedad, método de
    ETA/distancia, distancia recorrida (hasta cursor) ≠ total planificada. */
@@ -37,7 +38,7 @@ export default function ResourceDetail({ id }: { id: string }) {
   return (
     <div className="rdetail">
       <div className="rdetail__head">
-        <span className="rdetail__veh"><IconTruck width={26} height={26} /></span>
+        <span className="rdetail__veh"><VehiclePortrait type={tr.veh} /></span>
         <div style={{ flex: 1 }}>
           <div className="rdetail__id">{c.id} · {c.tarea}</div>
           <div className="rdetail__pat">Patente {tr.patente}{tr.sinMision ? " · sin misión" : ` · ${c.frenteId}`}</div>
@@ -58,10 +59,10 @@ export default function ResourceDetail({ id }: { id: string }) {
       <div className="rdetail__body scroll">
         {tab === "trayecto" && (
           <>
-            <EventosLista eventos={eventos.filter((e) => e.tipo !== "detencion" || true)} now={now} onJump={saltar} compact />
+            <EventosLista eventos={eventos} now={now} onJump={saltar} compact />
             <div className="metrics">
               <div className="metric">
-                <span className="k">Distancia recorrida <small>hasta el cursor</small></span>
+                <span className="k">Distancia recorrida <small>estimación demo · hasta el cursor</small></span>
                 <span className="v num">{dRec.toFixed(1)} km <small>de {dTot.toFixed(1)} km plan.</small></span>
               </div>
               <div className="metric">
@@ -127,7 +128,7 @@ function EventosLista({ eventos, now, onJump, compact }: { eventos: EventoTrack[
             <div className="trk__t">{minToHHMM(e.t)}</div>
             <div className="trk__title">
               {e.label}{e.durMin ? ` · ${e.durMin} min` : ""}
-              {!future && <span className="jump" onClick={() => onJump(e.t)}>saltar ⟶</span>}
+              {!future && <button className="jump" onClick={() => onJump(e.t)} aria-label={`Ir a ${e.label}, ${minToHHMM(e.t)}`}>saltar ⟶</button>}
             </div>
             <div className="trk__d">{e.detalle}{future ? " · (aún no ocurre)" : ""}</div>
           </div>

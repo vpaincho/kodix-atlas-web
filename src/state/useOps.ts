@@ -75,7 +75,7 @@ export const useOps = create<OpsState>((set, get) => ({
 
   segQuery: "",
   segFiltro: "todos",
-  segSeguir: true,
+  segSeguir: false,
   segCapas: { trayectorias: true, detenciones: false, geocercas: false },
   segRender: "3d",
 

@@ -11,6 +11,7 @@
    ========================================================================== */
 import { CUADRILLAS, type Fase } from "./scenario";
 import { faseAt, tramoAt } from "./derive";
+import { roadLegs, routeState } from "./routeGeometry";
 
 export interface Waypoint { id: string; label: string; x: number; y: number; }
 
@@ -25,7 +26,7 @@ export const WAYPOINTS: Record<string, Waypoint> = {
 };
 
 export type LegKind = "ejecutado" | "retorno";
-export interface RoutePoint { wp: string; t: number; kind?: LegKind; }
+export interface RoutePoint { wp: string; t: number; departAt?: number; kind?: LegKind; }
 
 export type VehTipo = "camioneta" | "camion" | "maquinaria";
 
@@ -46,27 +47,23 @@ export const TRACKS: ResourceTrack[] = [
   { id: "CO1", patente: "KDX-301", veh: "maquinaria", origen: "base_sur",
     ruta: [{ wp: "base_sur", t: 0 }, { wp: "A12", t: 16, kind: "ejecutado" }] },
   { id: "CO2", patente: "KDX-302", veh: "camioneta", origen: "base_sur",
-    ruta: [{ wp: "base_sur", t: 0 }, { wp: "B07", t: 20, kind: "ejecutado" }, { wp: "base_sur", t: 120, kind: "retorno" }] },
+    ruta: [{ wp: "base_sur", t: 0 }, { wp: "B07", t: 20, kind: "ejecutado" }, { wp: "base_sur", t: 120, departAt: 112, kind: "retorno" }] },
   { id: "CO3", patente: "KDX-303", veh: "camioneta", origen: "base_sur",
-    ruta: [{ wp: "base_sur", t: 0 }, { wp: "A12", t: 20, kind: "ejecutado" }, { wp: "B03", t: 78, kind: "ejecutado" }] },
+    ruta: [{ wp: "base_sur", t: 0 }, { wp: "A12", t: 20, kind: "ejecutado" }, { wp: "B03", t: 78, departAt: 55, kind: "ejecutado" }] },
   { id: "CO4", patente: "KDX-304", veh: "camioneta", origen: "base_sur",
     ruta: [{ wp: "base_sur", t: 0 }, { wp: "A08", t: 14, kind: "ejecutado" }],
     hueco: { from: 14, to: 120 } },   // posición desactualizada (ALR-03)
   { id: "CO5", patente: "KDX-305", veh: "camion", origen: "base_sur",
-    ruta: [{ wp: "base_sur", t: 30 }, { wp: "A08", t: 48, kind: "ejecutado" }, { wp: "B03", t: 86, kind: "ejecutado" }, { wp: "B08", t: 120, kind: "ejecutado" }] },
+    ruta: [{ wp: "base_sur", t: 30 }, { wp: "A08", t: 48, kind: "ejecutado" }, { wp: "B03", t: 103, departAt: 86, kind: "ejecutado" }, { wp: "B08", t: 120, kind: "ejecutado" }] },
   { id: "CO6", patente: "KDX-306", veh: "camioneta", origen: "base_sur", sinMision: true,
-    ruta: [{ wp: "base_sur", t: 0 }, { wp: "S400", t: 18, kind: "ejecutado" }, { wp: "base_sur", t: 58, kind: "retorno" }] },
+    ruta: [{ wp: "base_sur", t: 0 }, { wp: "S400", t: 18, kind: "ejecutado" }, { wp: "base_sur", t: 58, departAt: 40, kind: "retorno" }] },
 ];
 
 /** rumbo (grados, 0=arriba, horario) del recurso en el instante `now`,
     según el segmento de ruta vivo. Si está detenido, usa el último segmento. */
 export function rumboEn(tr: ResourceTrack, now: number): number {
-  const r = tr.ruta;
-  let seg = 1;
-  for (let i = 1; i < r.length; i++) { if (now <= r[i].t) { seg = i; break; } seg = i; }
-  const a = WAYPOINTS[r[seg - 1].wp], b = WAYPOINTS[r[seg].wp];
-  const dx = b.x - a.x, dy = b.y - a.y;
-  return (Math.atan2(dx, -dy) * 180) / Math.PI; // 0 = norte (arriba)
+  const { tangent } = routeState(tr, now, WAYPOINTS);
+  return Math.atan2(tangent.x, -tangent.y) * 180 / Math.PI;
 }
 
 export const trackDe = (id: string) => TRACKS.find((t) => t.id === id);
@@ -79,9 +76,7 @@ function dist(a: Waypoint, b: Waypoint) {
 
 /** distancia total planificada de la ruta (km) */
 export function distanciaTotal(tr: ResourceTrack): number {
-  let d = 0;
-  for (let i = 1; i < tr.ruta.length; i++) d += dist(WAYPOINTS[tr.ruta[i - 1].wp], WAYPOINTS[tr.ruta[i].wp]);
-  return d;
+  return roadLegs(tr, WAYPOINTS).reduce((sum, leg) => sum + leg.length, 0) * KM_POR_UNIDAD;
 }
 
 export interface PosDemo {
@@ -96,47 +91,13 @@ export interface PosDemo {
 
 /** posición en el instante `now`. Respeta huecos (no interpola) y "antes de salir". */
 export function posicionEn(tr: ResourceTrack, now: number): PosDemo {
-  const r = tr.ruta;
-  const tSalida = r[0].t;
-  // antes de la salida: en origen, sin movimiento
-  if (now <= tSalida) {
-    const w = WAYPOINTS[r[0].wp];
-    return { x: w.x, y: w.y, interpolada: false, desactualizada: false, antiguedadMin: 0 };
-  }
-  // hueco de datos: no interpolar; devolver última observación y su antigüedad
-  if (tr.hueco && now > tr.hueco.from) {
-    // última posición conocida = waypoint cuyo t <= hueco.from
-    let last = r[0];
-    for (const p of r) if (p.t <= tr.hueco.from) last = p;
-    const w = WAYPOINTS[last.wp];
-    return { x: w.x, y: w.y, interpolada: false, desactualizada: true, antiguedadMin: Math.round(now - tr.hueco.from) };
-  }
-  // interpolación demo entre los dos waypoints que rodean `now`
-  for (let i = 1; i < r.length; i++) {
-    if (now <= r[i].t) {
-      const a = WAYPOINTS[r[i - 1].wp], b = WAYPOINTS[r[i].wp];
-      const f = (now - r[i - 1].t) / Math.max(1, r[i].t - r[i - 1].t);
-      return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, interpolada: true, desactualizada: false, antiguedadMin: 0 };
-    }
-  }
-  // después del último punto: en el último waypoint
-  const w = WAYPOINTS[r[r.length - 1].wp];
-  return { x: w.x, y: w.y, interpolada: false, desactualizada: false, antiguedadMin: 0 };
+  const state = routeState(tr, now, WAYPOINTS);
+  return { ...state.point, interpolada: !state.observed, desactualizada: state.stale, antiguedadMin: state.age };
 }
 
 /** distancia recorrida hasta el cursor (km). No cuenta tramos futuros. */
 export function distanciaHasta(tr: ResourceTrack, now: number): number {
-  const r = tr.ruta;
-  let d = 0;
-  for (let i = 1; i < r.length; i++) {
-    const a = WAYPOINTS[r[i - 1].wp], b = WAYPOINTS[r[i].wp];
-    if (now >= r[i].t) d += dist(a, b);
-    else if (now > r[i - 1].t) {
-      const f = (now - r[i - 1].t) / Math.max(1, r[i].t - r[i - 1].t);
-      d += dist(a, b) * f; break;
-    } else break;
-  }
-  return d;
+  return routeState(tr, now, WAYPOINTS).travelled * KM_POR_UNIDAD;
 }
 
 /* --- eventos del recurso (hechos en la línea de simulación) -----------------*/
@@ -156,8 +117,7 @@ export function eventosDe(tr: ResourceTrack, now: number): EventoTrack[] {
   const ev: EventoTrack[] = [];
   const r = tr.ruta;
   ev.push({ t: r[0].t, tipo: "salida", label: "Salida", detalle: `Desde ${WAYPOINTS[r[0].wp].label}`, wp: r[0].wp });
-  // llegada = primer waypoint de destino alcanzado
-  if (r[1]) ev.push({ t: r[1].t, tipo: "llegada", label: "Llegada", detalle: `A ${WAYPOINTS[r[1].wp].label}`, wp: r[1].wp });
+  for (const point of r.slice(1)) ev.push({ t: point.t, tipo: "llegada", label: point.kind === "retorno" ? "Retorno a base" : "Llegada", detalle: `A ${WAYPOINTS[point.wp].label}`, wp: point.wp });
   // detenciones GPS = fases de espera del escenario (observación, NO prueba de espera operativa)
   if (c) {
     for (const tramo of c.tramos) {
