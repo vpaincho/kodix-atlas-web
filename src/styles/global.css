@@ -1,0 +1,59 @@
+/* Reset y base del lienzo ===================================================*/
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 700px at 70% -10%, #1a2033 0%, transparent 60%),
+    radial-gradient(900px 600px at 0% 100%, #15131f 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden; /* el centro de operaciones ocupa el viewport, sin scroll de página */
+}
+
+h1, h2, h3, p { margin: 0; }
+button { font-family: inherit; color: inherit; cursor: pointer; }
+ul { margin: 0; padding: 0; list-style: none; }
+
+/* Utilidades de tipografía ---------------------------------------------------*/
+.caps {
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  font-size: var(--fs-micro);
+  color: var(--text-3);
+  font-weight: 600;
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num  { font-variant-numeric: tabular-nums; }
+
+/* Scrollbars finos dentro de paneles ----------------------------------------*/
+.scroll { overflow: auto; }
+.scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 8px;
+}
+.scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Foco accesible: anillo violeta (la selección no depende solo del color) ----*/
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Modo demo: marca global ----------------------------------------------------*/
+.demo-badge {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.12em;
+  color: var(--violet-core);
+  border: 1px solid var(--violet-040);
+  background: var(--violet-010);
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  font-weight: 700;
+}

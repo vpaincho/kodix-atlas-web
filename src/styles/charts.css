@@ -1,0 +1,94 @@
+/* =============================================================================
+   Gráficos de Pulso operativo (radar, capacidad/demanda, flujo, timeline).
+   ========================================================================== */
+
+/* --- KPIs header -----------------------------------------------------------*/
+.kpis { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.kpi {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel-translu); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 10px 16px; min-width: 128px;
+}
+.kpi__icon { color: var(--violet-core); opacity: 0.9; }
+.kpi__val { font-size: 22px; font-weight: 700; line-height: 1; }
+.kpi__lbl { color: var(--text-3); font-size: var(--fs-small); margin-top: 3px; }
+.kpi--foco {
+  margin-left: auto; min-width: 280px;
+  background: linear-gradient(100deg, rgba(167,116,255,0.10), rgba(35,38,54,0.6));
+  border-color: var(--violet-040);
+  justify-content: space-between;
+}
+.kpi--foco .foco__k { color: var(--violet-core); }
+.foco__btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--violet); color: #190c2b; border: 0; font-weight: 700;
+  padding: 8px 13px; border-radius: 8px; font-size: var(--fs-small);
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.foco__btn:hover { box-shadow: var(--glow-violet); transform: translateY(-1px); }
+
+/* --- Radar -----------------------------------------------------------------*/
+.radar-wrap { position: relative; width: 100%; aspect-ratio: 1 / 0.5; }
+.radar-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.radar-ring { fill: none; stroke: var(--border-soft); }
+.radar-cross { stroke: var(--border-soft); stroke-dasharray: 2 5; }
+.radar-ringlbl { fill: var(--text-3); font-size: 10px; font-family: var(--font-mono); }
+.radar-dir { fill: var(--text-2); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+.radar-sweep { fill: url(#sweepGrad); }
+.blip { cursor: pointer; }
+.blip__halo { fill: var(--c); opacity: 0.16; transition: opacity var(--t-fast); }
+.blip:hover .blip__halo, .blip--sel .blip__halo { opacity: 0.3; }
+.blip__core { fill: var(--c); stroke: #0e1016; stroke-width: 1.2; }
+.blip--sel .blip__core { stroke: var(--violet-core); stroke-width: 2; }
+.blip__lbl { fill: var(--text); font-size: 11px; font-weight: 600; }
+.blip__eta { fill: var(--text-3); font-size: 10px; font-family: var(--font-mono); }
+.radar-legend { display: flex; gap: 16px; position: absolute; top: 4px; right: 6px; }
+.radar-legend .lg { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-small); }
+.radar-legend .lg i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* --- Capacidad / Demanda ---------------------------------------------------*/
+.cd-wrap { position: relative; width: 100%; height: 138px; }
+.cd-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cd-grid { stroke: var(--border-soft); }
+.cd-axis { fill: var(--text-3); font-size: 10px; font-family: var(--font-mono); }
+.cd-demand { fill: url(#demandGrad); }
+.cd-capacity { fill: none; stroke: var(--text); stroke-width: 1.8; }
+.cd-now { stroke: var(--violet); stroke-width: 1.4; stroke-dasharray: 3 3; }
+.cd-gap { fill: rgba(240,104,90,0.14); }
+.cd-gap-lbl { fill: var(--red); font-size: 11px; font-weight: 600; }
+
+/* --- Flujo de misiones -----------------------------------------------------*/
+.flow { display: flex; align-items: stretch; gap: 0; width: 100%; }
+.flow__count { display: flex; flex-direction: column; justify-content: center; padding-right: 16px; min-width: 92px; }
+.flow__count b { font-size: 26px; font-weight: 700; }
+.flow__count span { color: var(--text-3); font-size: var(--fs-small); }
+.flow__bands { display: flex; flex: 1; height: 92px; border-radius: 10px; overflow: hidden; }
+.band { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #10121a; overflow: hidden; padding: 0 4px; text-align: center; }
+.band__pct { font-size: 20px; font-weight: 800; }
+.band__name { font-size: var(--fs-small); font-weight: 700; opacity: 0.85; }
+.band__time { position: absolute; bottom: 8px; font-size: var(--fs-micro); font-family: var(--font-mono); opacity: 0.8; }
+.flow__legend { display: flex; gap: 16px; margin-top: 10px; }
+.flow__legend .lg { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-small); }
+.flow__legend .lg i { width: 10px; height: 10px; border-radius: 3px; }
+
+/* --- Línea de tiempo de recursos -------------------------------------------*/
+.timeline { width: 100%; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 180px 1fr 130px; align-items: center; gap: 10px; }
+.tl-head { color: var(--text-3); font-size: var(--fs-micro); padding: 0 0 8px; letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.tl-axis { position: relative; height: 14px; }
+.tl-axis span { position: absolute; transform: translateX(-50%); font-family: var(--font-mono); }
+.tl-row { padding: 1px 0; border-top: 1px solid var(--border-soft); }
+.tl-row:hover { background: var(--violet-010); }
+.tl-row--sel { background: var(--violet-016); }
+.tl-crew { display: flex; align-items: center; gap: 9px; }
+.tl-crew__dot { width: 9px; height: 9px; border-radius: 50%; }
+.tl-crew__id { font-weight: 700; }
+.tl-crew__task { color: var(--text-3); font-size: var(--fs-small); }
+.tl-track { position: relative; height: 20px; background: var(--surface); border-radius: 6px; overflow: hidden; }
+.seg { position: absolute; top: 0; bottom: 0; cursor: pointer; opacity: 0.92; }
+.seg:hover { opacity: 1; filter: brightness(1.12); }
+.hito { position: absolute; top: 50%; width: 9px; height: 9px; transform: translate(-50%,-50%) rotate(45deg); background: var(--violet-core); box-shadow: var(--glow-violet-s); border: 1px solid #0e1016; }
+.tl-now { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--violet); box-shadow: var(--glow-violet-s); z-index: 3; }
+.tl-legend { display: flex; gap: 16px; margin-top: 8px !important; }
+.tl-legend .lg { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-small); }
+.tl-legend .lg i { width: 12px; height: 8px; border-radius: 2px; }

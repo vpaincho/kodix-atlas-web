@@ -1,0 +1,90 @@
+/* =============================================================================
+   KODIX ATLAS · Tokens de diseño
+   Fuente: paleta del brief, ajustada contra los 5 mockups.
+   Un único lugar para color, elevación, brillo, tipografía y espacio.
+   ========================================================================== */
+:root {
+  /* --- Fondos y superficies --- */
+  --bg:            #10131B;   /* fondo carbón/azul oscuro */
+  --bg-deep:       #0B0E15;   /* viñeta / bordes del lienzo */
+  --panel:         #191D27;   /* panel oscuro */
+  --panel-translu: rgba(25, 29, 39, 0.72); /* panel translúcido sobre mapa */
+  --surface:       #232636;   /* superficie elevada (chips, inputs) */
+  --surface-2:     #2A2E40;   /* hover de superficie */
+  --border:        #3D4354;   /* borde fino */
+  --border-soft:   #262B38;   /* separador tenue */
+
+  /* --- Texto --- */
+  --text:          #F2F0FA;   /* principal */
+  --text-2:        #B5B6CC;   /* secundario */
+  --text-3:        #7A8099;   /* terciario / ejes */
+
+  /* --- Acento violeta (selección, rutas, foco) --- */
+  --violet:        #A774FF;
+  --violet-core:   #D1B3FF;   /* núcleo luminoso */
+  --violet-dim:    #6E52B0;
+  --violet-010:    rgba(167, 116, 255, 0.10);
+  --violet-016:    rgba(167, 116, 255, 0.16);
+  --violet-024:    rgba(167, 116, 255, 0.24);
+  --violet-040:    rgba(167, 116, 255, 0.40);
+
+  /* --- Estados operativos --- */
+  --green:         #38D5A1;   /* disponible / operativo */
+  --amber:         #F7BD43;   /* espera / atención */
+  --blue:          #589FF0;   /* traslado / info */
+  --grey:          #9AA0B4;   /* retorno / sin asignar */
+  --red:           #F0685A;   /* alerta alta / error */
+
+  /* alias semánticos de fase de misión */
+  --fase-traslado:  var(--blue);
+  --fase-espera:    var(--amber);
+  --fase-ejecucion: var(--violet);
+  --fase-retorno:   var(--grey);
+
+  /* --- Glows y sombras --- */
+  --glow-violet:   0 0 18px rgba(167, 116, 255, 0.45);
+  --glow-violet-s: 0 0 8px rgba(167, 116, 255, 0.55);
+  --glow-green:    0 0 10px rgba(56, 213, 161, 0.55);
+  --glow-amber:    0 0 10px rgba(247, 189, 67, 0.50);
+  --shadow-panel:  0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-float:  0 14px 40px rgba(0, 0, 0, 0.55);
+
+  /* --- Tipografía técnica --- */
+  --font-ui: "Inter", "SF Pro Text", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code", Menlo, monospace;
+
+  --fs-hero:   30px;
+  --fs-h2:     18px;
+  --fs-body:   13px;
+  --fs-small:  12px;
+  --fs-micro:  10.5px;
+
+  --ls-caps: 0.14em;  /* tracking para etiquetas en mayúscula */
+
+  /* --- Radios y espacios --- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* --- Layout --- */
+  --rail-w: 72px;     /* barra de iconos izquierda */
+  --topbar-h: 56px;
+  --replay-h: 64px;
+
+  /* --- Movimiento --- */
+  --e-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --e-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 140ms;
+  --t-med: 260ms;
+}
+
+/* Respeto a "reducir movimiento" (brief: movimiento reducido) */
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; --t-med: 0ms; }
+}

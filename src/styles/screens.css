@@ -1,0 +1,61 @@
+/* =============================================================================
+   Layouts de pantalla.
+   ========================================================================== */
+.screen { height: 100%; overflow: auto; padding: 14px 22px 8px; }
+/* Pulso ocupa exactamente el viewport: la banda superior llena el alto y los
+   gráficos escalan; la línea de tiempo queda abajo sin scroll de página. */
+.screen--fit { overflow: hidden; display: flex; flex-direction: column; }
+.screen--fit .pulso__grid { flex: 1; min-height: 0; }
+
+.screen__head { display: flex; align-items: flex-start; gap: 22px; margin-bottom: 10px; }
+.screen__titles { min-width: 230px; }
+.screen__title { font-size: var(--fs-hero); font-weight: 700; letter-spacing: -0.01em; }
+.screen__sub { color: var(--text-3); font-size: var(--fs-small); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Pulso operativo */
+.pulso__grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 1.12fr;
+  align-items: start;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.pulso__right { display: grid; grid-template-rows: auto auto; gap: 10px; min-width: 0; }
+
+.frente-sel { display: flex; align-items: center; gap: 8px; }
+.frente-sel__chip {
+  display: inline-flex; flex-direction: column; align-items: flex-end;
+  color: var(--text-2); font-size: var(--fs-small);
+}
+.frente-sel__chip b { color: var(--violet-core); font-size: var(--fs-body); }
+.frente-pills { display: flex; gap: 4px; }
+.frente-pills button {
+  border: 1px solid var(--border-soft); background: var(--surface);
+  color: var(--text-2); border-radius: 7px; padding: 5px 9px; font-size: var(--fs-micro); font-weight: 600;
+}
+.frente-pills button.active { background: var(--violet-016); border-color: var(--violet-040); color: var(--violet-core); }
+
+/* Placeholder de pantallas en construcción */
+.stub { height: 100%; display: grid; place-items: center; }
+.stub__card {
+  text-align: center; max-width: 440px; padding: 32px;
+  border: 1px dashed var(--border); border-radius: var(--r-lg); background: var(--panel-translu);
+}
+.stub__card h2 { font-size: 20px; margin-bottom: 8px; }
+.stub__card p { color: var(--text-3); font-size: var(--fs-small); line-height: 1.5; }
+.stub__badge { margin-bottom: 14px; }
+
+/* Superficie reservada al mundo geográfico (demo) */
+.world-surface {
+  position: relative; border-radius: var(--r-lg); overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 10%, #1d2233 0%, #0d1018 70%),
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(61,67,84,0.18) 23px 24px),
+    repeating-linear-gradient(90deg, transparent 0 23px, rgba(61,67,84,0.18) 23px 24px);
+  min-height: 300px; height: 100%;
+  display: grid; place-items: center;
+}
+.world-surface__tag {
+  position: absolute; top: 12px; left: 12px;
+}
+.world-surface__hint { color: var(--text-3); font-size: var(--fs-small); text-align: center; max-width: 320px; }
