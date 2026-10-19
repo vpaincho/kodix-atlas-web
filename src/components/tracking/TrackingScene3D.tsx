@@ -20,6 +20,7 @@ import {
 import { CUADRILLAS } from "../../data/scenario";
 import { faseAt, tramoAt } from "../../data/derive";
 import Pickup from "./scene/Pickup";
+import { routeProgress } from "../../data/routeProgress";
 import type { Beam } from "./VehicleMarker";
 
 const W = 46, D = 30;
@@ -42,19 +43,18 @@ interface SceneData {
 }
 
 function buildScene(tr: ResourceTrack, now: number): SceneData {
+  // Each leg keeps its own arrival time. A long first leg must not consume
+  // the time allocated to a later short leg (or vice versa).
   const pts = tr.ruta.map((rp) => proj(WAYPOINTS[rp.wp].x, WAYPOINTS[rp.wp].y));
-  const curve = new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.25);
-  const samples = curve.getPoints(90);
-  const t0 = tr.ruta[0].t, tN = tr.ruta[tr.ruta.length - 1].t;
-  let frac: number;
-  let desactualizada = false;
-  if (tr.hueco && now > tr.hueco.from) { frac = (tr.hueco.from - t0) / (tN - t0); desactualizada = true; }
-  else frac = (now - t0) / Math.max(1, tN - t0);
-  frac = Math.max(0, Math.min(1, frac));
-  const nExec = Math.max(1, Math.round(frac * (samples.length - 1)));
-  const fc = Math.min(0.999, Math.max(0.001, frac));
-  const truck = curve.getPointAt(fc);
-  const tan = curve.getTangentAt(fc);
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const samples = curve.getPoints(120);
+  const progress = routeProgress(tr, now);
+  const frac = progress.fraction;
+  const desactualizada = progress.stale;
+  const nExec = Math.floor(frac * (samples.length - 1));
+  // getPoint uses segment parameterization, matching the per-leg timeline.
+  const truck = curve.getPoint(frac);
+  const tan = curve.getTangent(Math.min(0.99999, Math.max(0.00001, frac)));
   const heading = Math.atan2(tan.x, tan.z);
   const dest = pts[pts.length - 1].clone();
   const pads = tr.ruta.map((rp) => ({ v: proj(WAYPOINTS[rp.wp].x, WAYPOINTS[rp.wp].y, 0), label: WAYPOINTS[rp.wp].label }));
@@ -83,7 +83,7 @@ function Terreno() {
         <planeGeometry args={[W * 1.6, D * 1.8]} />
         <meshStandardMaterial color="#12151d" roughness={1} metalness={0} />
       </mesh>
-      <gridHelper args={[W * 1.4, 28, "#222838", "#1a1f2b"]} position={[0, 0.01, 0]} />
+      
     </>
   );
 }
@@ -115,12 +115,12 @@ function Escena({ tr, now, seguir }: { tr: ResourceTrack; now: number; seguir: b
   const fase = faseAt(c, now); const tramo = tramoAt(c, now);
   const enEspera = fase === "espera" && tramo;
 
-  const exec = data.samples.slice(0, data.nExec + 1);
-  const plan = data.samples.slice(data.nExec);
+  const exec = [...data.samples.slice(0, data.nExec + 1), data.truck];
+  const plan = [data.truck, ...data.samples.slice(data.nExec + 1)];
 
   return (
     <>
-      <Rig target={data.truck} follow={seguir} />
+      <Rig target={seguir ? data.truck : new THREE.Vector3(0, 0, 0)} follow={seguir} />
       <ambientLight intensity={0.55} />
       <hemisphereLight args={["#5566aa", "#0a0c12", 0.5]} />
       <directionalLight position={[12, 20, 8]} intensity={1.15} castShadow shadow-mapSize={[1024, 1024]}
@@ -135,6 +135,20 @@ function Escena({ tr, now, seguir }: { tr: ResourceTrack; now: number; seguir: b
         </mesh>
       ))}
 
+      {/* Instalaciones representativas: dan escala sin afirmar arquitectura real. */}
+      {data.pads.map((pad, i) => (
+        <group key={"facility" + i} position={[pad.v.x + 2.5, 0, pad.v.z]}>
+          <mesh receiveShadow position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[3.8, 3]} /><meshStandardMaterial color="#34333b" roughness={1} />
+          </mesh>
+          {[-0.8, 0.8].map((x) => <mesh key={x} castShadow position={[x, 0.8, 0]}>
+            <cylinderGeometry args={[0.55, 0.55, 1.6, 20]} />
+            <meshStandardMaterial color="#9ca4b0" metalness={0.45} roughness={0.6} />
+          </mesh>)}
+          <mesh castShadow position={[0, 0.32, -1]}><boxGeometry args={[2.6, 0.6, 0.5]} /><meshStandardMaterial color="#535867" /></mesh>
+        </group>
+      ))}
+
       {/* camino (base oscura) */}
       <Line points={data.samples} color="#232838" lineWidth={15} />
 
@@ -143,7 +157,7 @@ function Escena({ tr, now, seguir }: { tr: ResourceTrack; now: number; seguir: b
         <Line points={plan} color="#7a5bc0" lineWidth={3} dashed dashSize={0.7} gapSize={0.5} transparent opacity={0.55} />
       )}
       {/* ruta ejecutada: cuerpo violeta + núcleo claro (el bloom aporta el halo) */}
-      {exec.length >= 2 && <Line points={exec} color="#A774FF" lineWidth={7} />}
+      {exec.length >= 2 && <Line points={exec} color={new THREE.Color("#A774FF").multiplyScalar(2)} lineWidth={7} />}
       {exec.length >= 2 && <Line points={exec} color="#EDE4FF" lineWidth={2.2} />}
 
       {/* destino */}
@@ -160,7 +174,7 @@ function Escena({ tr, now, seguir }: { tr: ResourceTrack; now: number; seguir: b
         )}
       </group>
       {/* etiqueta de la camioneta (billboard) */}
-      <Html position={[data.truck.x, 2.4, data.truck.z]} center distanceFactor={24} style={{ pointerEvents: "none" }}>
+      <Html position={[data.truck.x, 3.1, data.truck.z]} center distanceFactor={24} style={{ pointerEvents: "none" }}>
         <div className="scene-veh">
           {c.id}{data.desactualizada ? <span className="stale"> · desactualizada</span> : null}
           {enEspera && <span className="scene-pill">{Math.round(now - tramo!.from)} min</span>}
@@ -169,7 +183,7 @@ function Escena({ tr, now, seguir }: { tr: ResourceTrack; now: number; seguir: b
 
       <ContactShadows position={[0, 0.02, 0]} opacity={0.5} scale={60} blur={2.4} far={8} resolution={512} color="#000000" />
       <EffectComposer>
-        <Bloom intensity={0.9} luminanceThreshold={0.28} luminanceSmoothing={0.3} mipmapBlur radius={0.7} />
+        <Bloom intensity={0.9} luminanceThreshold={0.8} luminanceSmoothing={0.3} mipmapBlur radius={0.7} />
       </EffectComposer>
     </>
   );

@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { existsSync } from "node:fs";
 
 // Dev server escucha en todas las interfaces para poder verificar desde el
 // navegador en localhost. El laboratorio vive en /labs (segunda entrada).
@@ -15,7 +16,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
-        labs: "labs/index.html",
+        ...(existsSync("labs/index.html") ? { labs: "labs/index.html" } : {}),
       },
     },
   },

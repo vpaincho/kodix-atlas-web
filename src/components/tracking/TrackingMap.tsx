@@ -177,7 +177,7 @@ export default function TrackingMap() {
           return (
             <div key={w.id} style={{ position: "absolute", left: p.x, top: p.y, transform: "translate(-50%,-50%)", pointerEvents: "none", zIndex: 2 }}>
               <div style={{ width: 9, height: 9, background: "#141926", border: "1.5px solid var(--border)", borderRadius: 2 }} />
-              <div style={{ position: "absolute", left: 12, top: -3, fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-3)", whiteSpace: "nowrap", letterSpacing: "0.03em" }}>{w.label}</div>
+              <div style={{ position: "absolute", left: 12, top: 16, fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--text-3)", whiteSpace: "nowrap", letterSpacing: "0.03em" }}>{w.label}</div>
             </div>
           );
         })}
@@ -216,7 +216,7 @@ export default function TrackingMap() {
         <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="var(--panel-translu)" stroke="var(--border-soft)" /><path d="M20 6 L23 20 L20 17 L17 20 Z" fill="var(--violet)" /><text x="20" y="14" textAnchor="middle" fontSize="8" fill="var(--text-2)" fontWeight="700">N</text></svg>
       </div>
       <div className="tmap__place">Yacimiento Zona Cero · Golfo San Jorge</div>
-      <div className="tmap__scale"><span>0</span><span className="bar" /><span>2 km</span></div>
+      <div className="tmap__scale"><span>0</span><span className="bar" /><span>Sin escala geográfica</span></div>
 
       <span className="tmap__tag demo-badge">Superficie demo · esquema 2D, recorridos interpolados (no validados)</span>
       <div className="tmap__legend">
