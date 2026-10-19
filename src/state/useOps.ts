@@ -37,6 +37,10 @@ interface OpsState {
   segCapas: Record<string, boolean>; // trayectorias / detenciones / geocercas
   segRender: "2d" | "3d";       // adaptador visual del mapa (SVG 2D | escena 3D)
 
+  /** estado de vista de Campo (se conserva al navegar; la cámara vive en el mapa, no acá) */
+  geoVista: "cartografica" | "relieve" | "satelite"; // solo "cartografica" tiene datos reales
+  geoCapas: Record<string, boolean>; // limite / caminos
+
   /* acciones */
   setNow: (m: number) => void;
   tick: (dtMin: number) => void;
@@ -57,6 +61,8 @@ interface OpsState {
   toggleSeguir: () => void;
   toggleSegCapa: (id: string) => void;
   setSegRender: (r: "2d" | "3d") => void;
+  setGeoVista: (v: OpsState["geoVista"]) => void;
+  toggleGeoCapa: (id: string) => void;
 }
 
 export const useOps = create<OpsState>((set, get) => ({
@@ -78,6 +84,9 @@ export const useOps = create<OpsState>((set, get) => ({
   segSeguir: false,
   segCapas: { trayectorias: true, detenciones: false, geocercas: false },
   segRender: "3d",
+
+  geoVista: "cartografica",
+  geoCapas: { limite: true, caminos: true },
 
   setNow: (m) => set({ now: Math.max(0, Math.min(WINDOW_MIN, m)) }),
 
@@ -109,6 +118,8 @@ export const useOps = create<OpsState>((set, get) => ({
   toggleSeguir: () => set((s) => ({ segSeguir: !s.segSeguir })),
   toggleSegCapa: (id) => set((s) => ({ segCapas: { ...s.segCapas, [id]: !s.segCapas[id] } })),
   setSegRender: (r) => set({ segRender: r }),
+  setGeoVista: (v) => set({ geoVista: v }),
+  toggleGeoCapa: (id) => set((s) => ({ geoCapas: { ...s.geoCapas, [id]: !s.geoCapas[id] } })),
 }));
 
 /** cantidad de alertas no reconocidas al instante actual (para el badge del nav) */
