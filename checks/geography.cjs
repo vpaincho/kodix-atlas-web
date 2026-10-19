@@ -6,7 +6,7 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
  const page=await browser.newPage({viewport:{width:1672,height:941}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  // Do not make automated pan/zoom requests against OSM's public tile service.
  // Intercept tiles with a fixture; this verifies UI and local data, not remote cartography.
- await page.route('https://tile.openstreetmap.org/**',r=>r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));
+ await page.route('https://tile.openstreetmap.org/**',r=>process.env.STALL_TILES ? undefined : r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64')}));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.getByRole('navigation').getByRole('button',{name:'Campo',exact:true}).click();
  await page.getByRole('button',{name:'Encuadrar zona'}).waitFor();await page.waitForFunction(()=>!document.querySelector('.geo-map__tools button').disabled);
  const mapSize=await page.locator('.geo-map__canvas').boundingBox();assert.ok(mapSize.width>300&&mapSize.height>300,'map host has visible size');assert.ok(await page.locator('.maplibregl-ctrl-attrib').isVisible(),'attribution visible');await page.getByRole('button',{name:'Vista inclinada'}).click();assert.equal(await page.getByRole('button',{name:'Vista cenital'}).getAttribute('aria-pressed'),'true');
@@ -17,5 +17,6 @@ const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+new URL
  await page.locator('input[type=file]').setInputFiles({name:'proyectado.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...data,features:[{...data.features[0],geometry:{type:'Point',coordinates:[585000,4920000]}}]}))});await page.getByRole('alert').filter({hasText:'WGS84'}).waitFor();
  for(const width of [1920,1672,1366,1147]){await page.setViewportSize({width,height:941});await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'overflow '+width);}
  await page.setViewportSize({width:1672,height:941});await page.getByRole('button',{name:'Encuadrar zona'}).click();await page.waitForTimeout(1200);await page.screenshot({path:'checks/geography.png'});
+ if(process.env.STALL_TILES){await page.getByRole('alert').filter({hasText:'no respondió'}).waitFor({timeout:20000});assert.equal(await page.getByRole('button',{name:'Encuadrar zona'}).isEnabled(),true);}
  assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,checks:['map initialization','camera','boundary','local import','invalid CRS','four widths'],remoteTiles:'mocked; not verified',errors}));
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>server.close());
