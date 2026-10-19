@@ -47,3 +47,11 @@ npm run test:ui
 
 Ver `docs/PLAN_VISUAL_REA.md` y `docs/INVESTIGACION_SEGUIMIENTO_01.md`.
 La investigación REA es herramienta de desarrollo y no forma parte del bundle. Las dependencias de análisis están fuera del proyecto.
+
+## Laboratorio visual
+
+Abrir `/labs/` en la misma URL de Vite. Incluye presentación interactiva de equipos, perspectiva con inercia y un estudio GPU de partículas inspirado en los videos de referencia. Los componentes de presentación se reutilizan en el botón **Inspeccionar equipo 3D** de Seguimiento.
+
+El laboratorio es un estudio de lenguaje visual, no telemetría ni réplica del código de los videos. Los modelos siguen siendo representativos. La pausa y el movimiento reducido conservan la funcionalidad.
+
+Prueba adicional: `node checks/visual-lab.cjs` después del build (con el navegador Playwright instalado o `CHROMIUM_EXECUTABLE_PATH`).

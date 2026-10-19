@@ -2,7 +2,8 @@ import VehiclePortrait from "./VehiclePortrait";
 /* Detalle del recurso · pestañas Trayecto / Eventos / Estado. Respeta las reglas
    de datos: detención GPS ≠ espera, última posición + antigüedad, método de
    ETA/distancia, distancia recorrida (hasta cursor) ≠ total planificada. */
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+const ResourceShowcaseDialog = lazy(() => import("../visual/ResourceShowcaseDialog"));
 import { useOps } from "../../state/useOps";
 import { minToHHMM } from "../../data/derive";
 import {
@@ -21,6 +22,7 @@ export default function ResourceDetail({ id }: { id: string }) {
   const selAlerta = useOps((s) => s.selAlerta);
   const irA = useOps((s) => s.irA);
   const [tab, setTab] = useState<Tab>("trayecto");
+  const [showModel, setShowModel] = useState(false);
 
   const tr = trackDe(id); const c = CUADRILLAS.find((x) => x.id === id);
   if (!tr || !c) return null;
@@ -48,6 +50,8 @@ export default function ResourceDetail({ id }: { id: string }) {
         </span>
       </div>
 
+      <button className="btn" style={{width:"100%",marginBottom:12}} onClick={()=>setShowModel(true)}>Inspeccionar equipo 3D ↗</button>
+      {showModel && <Suspense fallback={<span role="status">Preparando equipo…</span>}><ResourceShowcaseDialog track={tr} onClose={()=>setShowModel(false)}/></Suspense>}
       <div className="tabs">
         {(["trayecto", "eventos", "estado"] as Tab[]).map((t) => (
           <button key={t} className={`tab ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>
