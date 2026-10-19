@@ -33,3 +33,16 @@ test('all tracks have exact endpoints, bounded monotone distances and visible ev
 test('CO5 does not move during service; CO6 is available after returning', () => {
   samePoint(posicionEn(track('CO5'),70),WAYPOINTS.A08);assert.equal(movilidad(track('CO6'),102),'disponible');
 });
+const {readGeography,boundsOf}=require('../src/data/geo/geometry.ts');
+test('Zona Cero retains its original geographic extent and closed polygon',()=>{
+  const zone=require('../src/data/geo/zona-cero.json');readGeography(zone);
+  const [[w,s],[e,n]]=boundsOf(zone);assert.ok(w>-68&&e<-67.8&&s>-45.9&&n<-45.7);
+  const ring=zone.features[0].geometry.coordinates[0];assert.deepEqual(ring[0],ring.at(-1));
+});
+test('geographic imports reject projected coordinates, empty files and oversized geometry',()=>{
+  const data=coords=>({type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:coords}}]});
+  assert.throws(()=>readGeography(data([585000,4920000])),/WGS84/);
+  assert.throws(()=>readGeography({type:'FeatureCollection',features:[]}),/geometrías/);
+  assert.throws(()=>readGeography({type:'FeatureCollection',features:Array(10001).fill(data([0,0]).features[0])}),/10.000/);
+  assert.deepEqual(boundsOf(readGeography(data([-67.86,-45.82]))),[[-67.86,-45.82],[-67.86,-45.82]]);
+});

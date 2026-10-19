@@ -55,3 +55,6 @@ Abrir `/labs/` en la misma URL de Vite. Incluye presentación interactiva de equ
 El laboratorio es un estudio de lenguaje visual, no telemetría ni réplica del código de los videos. Los modelos siguen siendo representativos. La pausa y el movimiento reducido conservan la funcionalidad.
 
 Prueba adicional: `node checks/visual-lab.cjs` después del build (con el navegador Playwright instalado o `CHROMIUM_EXECUTABLE_PATH`).
+
+## Campo geográfico
+Campo ahora muestra el polígono real de Zona Cero sobre cartografía OpenStreetMap mediante MapLibre. Requiere internet. Permite encuadrar, inclinar, activar el límite y cargar una capa GeoJSON WGS84 local de pozos/caminos. Las capas importadas no se guardan al salir de Campo. Seguimiento conserva su demo; faltan coordenadas GPS y capas operativas para vincularlo al territorio real. Ver `docs/MAPA_REAL_Y_DESARROLLO_INTEGRAL.md`.
